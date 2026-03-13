@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Nautilus.Patchers;
 
 namespace Nautilus.Handlers;
@@ -28,14 +29,18 @@ public static class WaitScreenHandler
     /// <see cref="WaitScreenTask"/>.<see cref="WaitScreenTask.Status"/>. Accepts language keys for localisation.</param>
     public static void RegisterEarlyLoadTask(string modName, Action<WaitScreenTask> loadingFunction, string description = null)
     {
-        WaitScreenPatcher.EarlyInitTasks.Add(new WaitScreenTask(modName, loadingFunction, description));
+        if (!_tasksAddedByMod.ContainsKey(modName)) _tasksAddedByMod[modName] = 1;
+        else _tasksAddedByMod[modName]++;
+        WaitScreenPatcher.EarlyInitTasks.Add(new WaitScreenTask(modName, modName + "Task " + _tasksAddedByMod[modName], loadingFunction, description));
     }
 
     /// <inheritdoc cref="RegisterEarlyLoadTask"/>
     public static void RegisterEarlyAsyncLoadTask(string modName, Func<WaitScreenTask, IEnumerator> loadingFunction,
         string description = null)
     {
-        WaitScreenPatcher.EarlyInitTasks.Add(new WaitScreenTask(modName, loadingFunction, description));
+        if (!_tasksAddedByMod.ContainsKey(modName)) _tasksAddedByMod[modName] = 1;
+        else _tasksAddedByMod[modName]++;
+        WaitScreenPatcher.EarlyInitTasks.Add(new WaitScreenTask(modName, modName + "Task " + _tasksAddedByMod[modName], loadingFunction, description));
     }
 
     /// <summary>
@@ -56,14 +61,18 @@ public static class WaitScreenHandler
     /// <see cref="WaitScreenTask"/>.<see cref="WaitScreenTask.Status"/>. Accepts language keys for localisation.</param>
     public static void RegisterLoadTask(string modName, Action<WaitScreenTask> loadingFunction, string description = null)
     {
-        WaitScreenPatcher.InitTasks.Add(new WaitScreenTask(modName, loadingFunction, description));
+        if (!_tasksAddedByMod.ContainsKey(modName)) _tasksAddedByMod[modName] = 1;
+        else _tasksAddedByMod[modName]++;
+        WaitScreenPatcher.InitTasks.Add(new WaitScreenTask(modName, modName + "Task " + _tasksAddedByMod[modName], loadingFunction, description));
     }
 
     /// <inheritdoc cref="RegisterLoadTask"/>
     public static void RegisterAsyncLoadTask(string modName, Func<WaitScreenTask, IEnumerator> loadingFunction,
         string description = null)
     {
-        WaitScreenPatcher.InitTasks.Add(new WaitScreenTask(modName, loadingFunction, description));
+        if (!_tasksAddedByMod.ContainsKey(modName)) _tasksAddedByMod[modName] = 1;
+        else _tasksAddedByMod[modName]++;
+        WaitScreenPatcher.InitTasks.Add(new WaitScreenTask(modName, modName + "Task " + _tasksAddedByMod[modName], loadingFunction, description));
     }
 
     /// <summary>
@@ -81,15 +90,21 @@ public static class WaitScreenHandler
     /// <see cref="WaitScreenTask"/>.<see cref="WaitScreenTask.Status"/>. Accepts language keys for localisation.</param>
     public static void RegisterLateLoadTask(string modName, Action<WaitScreenTask> loadingFunction, string description = null)
     {
-        WaitScreenPatcher.LateInitTasks.Add(new WaitScreenTask(modName, loadingFunction, description));
+        if (!_tasksAddedByMod.ContainsKey(modName)) _tasksAddedByMod[modName] = 1;
+        else _tasksAddedByMod[modName]++;
+        WaitScreenPatcher.LateInitTasks.Add(new WaitScreenTask(modName, modName + "Task " + _tasksAddedByMod[modName], loadingFunction, description));
     }
 
     /// <inheritdoc cref="RegisterLateLoadTask"/>
     public static void RegisterLateAsyncLoadTask(string modName, Func<WaitScreenTask, IEnumerator> loadingFunction,
         string description = null)
     {
-        WaitScreenPatcher.LateInitTasks.Add(new WaitScreenTask(modName, loadingFunction, description));
+        if (!_tasksAddedByMod.ContainsKey(modName)) _tasksAddedByMod[modName] = 1;
+        else _tasksAddedByMod[modName]++;
+        WaitScreenPatcher.LateInitTasks.Add(new WaitScreenTask(modName, modName + "Task " + _tasksAddedByMod[modName], loadingFunction, description));
     }
+
+    private static readonly Dictionary<string, int> _tasksAddedByMod = new();
 
     /// <summary>
     /// Represents the unit of work performed by a mod during the loading screen.
@@ -111,20 +126,26 @@ public static class WaitScreenHandler
 
         internal readonly Action<WaitScreenTask> ModActionSync;
         internal readonly Func<WaitScreenTask, IEnumerator> ModActionAsync;
+        internal readonly string TaskName;
+        internal readonly List<string> Dependencies = new();
 
 
-        internal WaitScreenTask(string modName, Action<WaitScreenTask> action, string description = null)
+        internal WaitScreenTask(string modName, string taskName, Action<WaitScreenTask> action, string description = null, params  string[] dependencies)
         {
             ModName = modName;
             ModActionSync = action;
             Status = description;
+            TaskName = taskName;
+            Dependencies.AddRange(dependencies);
         }
 
-        internal WaitScreenTask(string modName, Func<WaitScreenTask, IEnumerator> action, string description = null)
+        internal WaitScreenTask(string modName, string taskName, Func<WaitScreenTask, IEnumerator> action, string description = null,  params string[] dependencies)
         {
             ModName = modName;
             ModActionAsync = action;
             Status = description;
+            TaskName = taskName;
+            Dependencies.AddRange(dependencies);
         }
     }
 }

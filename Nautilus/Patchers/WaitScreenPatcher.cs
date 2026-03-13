@@ -95,7 +95,8 @@ internal static class WaitScreenPatcher
         // In BZ the WaitScreen is part of the Main scene and does not exist yet. Set up a dummy stage instead.
         if (loadingStage == null)
             loadingStage = new WaitScreen.ManualWaitItem(EarlyModLoadingStage);
-        yield return ProcessModTasks(EarlyInitTasks, loadingStage);
+        var tasks = new List<WaitScreenHandler.WaitScreenTask>(EarlyInitTasks); // If a mod registers a task during early mod load, this will hold the task until next load
+        yield return ProcessModTasks(tasks, loadingStage);
 
         // Count the mod loading stage as completed and remove it from the stack.
         loadingStage.SetProgress(1f);
@@ -115,7 +116,8 @@ internal static class WaitScreenPatcher
     private static IEnumerator LoadModDataAsync(IEnumerator enumerator)
     {
         var loadingStage = WaitScreen.Add(ModLoadingStage);
-        yield return ProcessModTasks(InitTasks, loadingStage);
+        var tasks = new List<WaitScreenHandler.WaitScreenTask>(InitTasks); // If a mod registers a task during mod load, this will hold the task until next load
+        yield return ProcessModTasks(tasks, loadingStage);
         // Count the mod loading stage as completed and remove it from the stack.
         loadingStage.SetProgress(1f);
         WaitScreen.Remove(loadingStage);
@@ -125,7 +127,8 @@ internal static class WaitScreenPatcher
 
         // Usually the loading screen would have ended here. Instead, add another opportunity for mods to set up.
         var lateLoading = WaitScreen.Add(LateModLoadingStage);
-        yield return ProcessModTasks(LateInitTasks, lateLoading);
+        var lateTasks = new List<WaitScreenHandler.WaitScreenTask>(LateInitTasks); // If a mod registers a task during late mod load, this will hold the task until next load
+        yield return ProcessModTasks(lateTasks, lateLoading);
         lateLoading.SetProgress(1f);
         WaitScreen.Remove(lateLoading);
 
